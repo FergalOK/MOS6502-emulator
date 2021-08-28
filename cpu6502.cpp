@@ -41,9 +41,9 @@ class internalController
         return 3;
     }
 
-    void fetchData()
+    void fetchData(uint16_t addr)
     {
-        interface->addressBus = pc;
+        interface->addressBus = addr;
         interface->reading = true;
         interface->sync = false;
     }
@@ -53,6 +53,14 @@ class internalController
         interface->addressBus = pc;
         interface->reading = true;
         interface->sync = true;
+        timing = -1;
+    }
+
+    void store(uint16_t a, uint8_t d)
+    {
+        interface->addressBus = a;
+        interface->dataBus = d;
+        interface->reading = false;
     }
 
     void execute()
@@ -64,14 +72,33 @@ class internalController
             // Implied Addressing
             if (timing == 0)
             {
-                fetchData();
+                fetchData(pc);
                 pc++;
             }
             else if (timing == 1)
             {
-                accum = interface->dataBus;
+                accum = data;
                 fetchOpcode();
-                timing = -1;
+                pc++;
+            }
+        }
+        else if (instr == 0x85)
+        {
+            // STA Oper
+            // Zero Page
+            if (timing == 0)
+            {
+                fetchData(pc);
+                pc++;
+            }
+            else if (timing == 1)
+            {
+                store(data, accum);
+                // Don't increment pc
+            }
+            else if (timing == 2)
+            {
+                fetchOpcode();
                 pc++;
             }
         }
@@ -100,7 +127,12 @@ class internalController
             data = interface->dataBus;
         }
         execute();
-        printf("accum = %i\n", accum);
+
+        if (timing == 0)
+        {
+            // At each instruction
+            printf("accum = %i\n", accum);
+        }
     }
 };
 
@@ -118,7 +150,9 @@ class externalController
         memory[0] = 0xA9;
         memory[1] = 100;
         memory[2] = 0xA9;
-        memory[3] = 50;
+        memory[3] = 0xA9;
+        memory[4] = 0x85;
+        memory[5] = 6;
     }
 
     void cycle()
@@ -153,6 +187,8 @@ class externalController
             phaseTwo = false;
             // Data should be kept for min 10ns after the end of the cycle
         }
+
+        printf("memory = {%x, %x, %x, %x, %x, %x, %x, %x,...}\n", memory[0], memory[1], memory[2], memory[3], memory[4], memory[5], memory[6], memory[7]);
     }
 };
 
@@ -174,6 +210,11 @@ class controller
 int main()
 {
     controller controller;
+    controller.cycle();
+    controller.cycle();
+    controller.cycle();
+    controller.cycle();
+    controller.cycle();
     controller.cycle();
     controller.cycle();
     controller.cycle();
