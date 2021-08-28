@@ -13,7 +13,7 @@ class cpu6502Interface
 
     // Output
     uint16_t addressBus = 0; // pins 04-19 (A0-A15)
-    bool reading = false; // pin 34 (R/W) Read when high, write when low
+    bool reading = true; // pin 34 (R/W) Read when high, write when low
     uint8_t out = 0; // pins 37-39 (OUT2-OUT0) Only first 3 bits are used
     bool sync = true;
 
@@ -30,7 +30,10 @@ class internalController
     uint8_t timing = -2;
     uint16_t pc = 0;
     uint8_t instr = 0;
+    uint8_t data = 0;
     uint8_t lenData = 0;
+
+    uint8_t accum = 0;
 
     uint8_t instrLen(uint8_t instr)
     {
@@ -38,9 +41,40 @@ class internalController
         return 3;
     }
 
-    void execute(uint8_t instr)
+    void fetchData()
+    {
+        interface->addressBus = pc;
+        interface->reading = true;
+        interface->sync = false;
+    }
+
+    void fetchOpcode()
+    {
+        interface->addressBus = pc;
+        interface->reading = true;
+        interface->sync = true;
+    }
+
+    void execute()
     {
         // Execute instruction
+        if (instr == 0xA9)
+        {
+            // LDA #Oper
+            // Implied Addressing
+            if (timing == 0)
+            {
+                fetchData();
+                pc++;
+            }
+            else if (timing == 1)
+            {
+                accum = interface->dataBus;
+                fetchOpcode();
+                timing = -1;
+                pc++;
+            }
+        }
     }
 
     public:
@@ -48,26 +82,25 @@ class internalController
     void cycle()
     {
         timing++;
-        if (interface->sync)
+        if (interface->sync && timing != 0)
         {
             interface->addressBus = pc;
             interface->reading = true;
             pc++;
+            return;
         }
-        if (timing == -1) return;
 
         if (timing == 0)
         {
             instr = interface->dataBus;
-            uint8_t len = instrLen(instr);
-            execute(instr);
-            // If instruction only requires the instruction byte,
-            // the following fetched byte is discarded while the 1-byte
-            // instruction is executing 
-            if (len != 1) {
-                pc++;
-            }
+            interface->addressBus = pc;
         }
+        else
+        {
+            data = interface->dataBus;
+        }
+        execute();
+        printf("accum = %i\n", accum);
     }
 };
 
@@ -80,7 +113,13 @@ class externalController
     uint8_t data;
 
     public:
-    externalController(cpu6502Interface* _interface): interface(_interface) {}
+    externalController(cpu6502Interface* _interface): interface(_interface) 
+    {
+        memory[0] = 0xA9;
+        memory[1] = 100;
+        memory[2] = 0xA9;
+        memory[3] = 50;
+    }
 
     void cycle()
     {
@@ -135,6 +174,10 @@ class controller
 int main()
 {
     controller controller;
+    controller.cycle();
+    controller.cycle();
+    controller.cycle();
+    controller.cycle();
     controller.cycle();
     controller.cycle();
 }
