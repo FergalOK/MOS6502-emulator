@@ -36,6 +36,7 @@ class internalController
 
     uint8_t accum = 0;
     uint8_t add = 0; // Adder hold register
+    uint8_t carry = 0;
 
     uint8_t instrLen(uint8_t instr)
     {
@@ -108,7 +109,10 @@ class internalController
             // Implied
             if (timing == 1)
             {
-                fetchOpcode();
+                // fetchOpcode();
+                // repeating fetch current pc
+                timing = -1;
+                interface->sync = 1;
             }
         }
         else if (instr == 0x4C)
@@ -128,6 +132,22 @@ class internalController
                 pc = add | (data << 8);
                 fetchOpcode();
                 pc++;
+            }
+        }
+        else if (instr == 0x90)
+        {
+            // BCC
+            // Relative
+            if (timing == 1)
+            {
+                fetchOpcode();
+                pc++;
+                if (!carry)
+                {
+                    timing = -2;
+                    // pc is 1 ahead of
+                    pc += data-1;
+                }
             }
         }
     }
@@ -171,13 +191,14 @@ class externalController
     public:
     externalController(cpu6502Interface* _interface): interface(_interface) 
     {
-        memory[0] = 0xA9;
-        memory[1] = 100;
-        memory[2] = 0x4C;
-        memory[3] = 0x23;
-        memory[4] = 0x01;
-        memory[5] = 0xA9;
-        memory[6] = 10;
+        memory[0] = 0xEA;
+        memory[1] = 0x90;
+        memory[2] = 4;
+        memory[3] = 0x4C;
+        memory[4] = 0x23;
+        memory[5] = 0x01;
+        memory[6] = 0xA9;
+        memory[7] = 10;
         memory[int(0x123)] = 0xA9;
         memory[int(0x124)] = 20;
         
