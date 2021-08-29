@@ -4,6 +4,7 @@
 
 class cpu6502Interface
 {
+    // TODO: pins are wrong
     public:
     // Input
     void tick(); // pin 29 (CLK)
@@ -65,17 +66,19 @@ class internalController
 
     void execute()
     {
+        if (timing == 0)
+        {
+            // Decoding the instruction comes after fetching the current cycle's next data byte
+            fetchData(pc);
+            pc++;
+        }
         // Execute instruction
-        if (instr == 0xA9)
+        else if (instr == 0xA9)
         {
             // LDA #Oper
-            // Implied Addressing
-            if (timing == 0)
-            {
-                fetchData(pc);
-                pc++;
-            }
-            else if (timing == 1)
+            // Immediate Addressing
+
+            if (timing == 1)
             {
                 accum = data;
                 fetchOpcode();
@@ -86,12 +89,7 @@ class internalController
         {
             // STA Oper
             // Zero Page
-            if (timing == 0)
-            {
-                fetchData(pc);
-                pc++;
-            }
-            else if (timing == 1)
+            if (timing == 1)
             {
                 store(data, accum);
                 // Don't increment pc
@@ -102,12 +100,23 @@ class internalController
                 pc++;
             }
         }
+        else if (instr == 0xEA)
+        {
+            // NOP
+            // Implied
+            if (timing == 1)
+            {
+                fetchOpcode();
+            }
+        }
     }
 
     public:
     internalController(cpu6502Interface* _interface): interface(_interface) {}
     void cycle()
     {
+        if (interface->sync) printf("------\n");
+        printf("%i, %i, %i\n", pc, interface->addressBus, interface->dataBus);
         timing++;
         if (interface->sync && timing != 0)
         {
@@ -127,12 +136,6 @@ class internalController
             data = interface->dataBus;
         }
         execute();
-
-        if (timing == 0)
-        {
-            // At each instruction
-            printf("accum = %i\n", accum);
-        }
     }
 };
 
@@ -149,10 +152,11 @@ class externalController
     {
         memory[0] = 0xA9;
         memory[1] = 100;
-        memory[2] = 0xA9;
+        memory[2] = 0xEA;
         memory[3] = 0xA9;
-        memory[4] = 0x85;
-        memory[5] = 6;
+        memory[4] = 0xA9;
+        memory[5] = 0x85;
+        memory[6] = 7;
     }
 
     void cycle()
@@ -187,8 +191,6 @@ class externalController
             phaseTwo = false;
             // Data should be kept for min 10ns after the end of the cycle
         }
-
-        printf("memory = {%x, %x, %x, %x, %x, %x, %x, %x,...}\n", memory[0], memory[1], memory[2], memory[3], memory[4], memory[5], memory[6], memory[7]);
     }
 };
 
@@ -210,6 +212,7 @@ class controller
 int main()
 {
     controller controller;
+    controller.cycle();
     controller.cycle();
     controller.cycle();
     controller.cycle();
