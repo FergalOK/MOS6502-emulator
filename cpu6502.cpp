@@ -35,6 +35,7 @@ class internalController
     uint8_t lenData = 0;
 
     uint8_t accum = 0;
+    uint8_t add = 0; // Adder hold register
 
     uint8_t instrLen(uint8_t instr)
     {
@@ -69,6 +70,7 @@ class internalController
         if (timing == 0)
         {
             // Decoding the instruction comes after fetching the current cycle's next data byte
+            // Consequently, all instructions take at least 2 cycles
             fetchData(pc);
             pc++;
         }
@@ -107,6 +109,25 @@ class internalController
             if (timing == 1)
             {
                 fetchOpcode();
+            }
+        }
+        else if (instr == 0x4C)
+        {
+            // JMP Oper
+            // Absolute
+            if (timing == 1)
+            {
+                // https://retrocomputing.stackexchange.com/questions/19750/where-does-the-6502-store-the-low-order-byte-after-fetching-for-read-instruction
+                // ADL help in add out
+                add = data;
+                fetchData(pc);
+                pc++;
+            }
+            else if (timing == 2)
+            {
+                pc = add | (data << 8);
+                fetchOpcode();
+                pc++;
             }
         }
     }
@@ -152,11 +173,14 @@ class externalController
     {
         memory[0] = 0xA9;
         memory[1] = 100;
-        memory[2] = 0xEA;
-        memory[3] = 0xA9;
-        memory[4] = 0xA9;
-        memory[5] = 0x85;
-        memory[6] = 7;
+        memory[2] = 0x4C;
+        memory[3] = 0x23;
+        memory[4] = 0x01;
+        memory[5] = 0xA9;
+        memory[6] = 10;
+        memory[int(0x123)] = 0xA9;
+        memory[int(0x124)] = 20;
+        
     }
 
     void cycle()
