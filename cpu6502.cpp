@@ -36,7 +36,9 @@ class internalController
 
     uint8_t accum = 0;
     uint8_t add = 0; // Adder hold register
-    uint8_t carry = 0;
+    uint8_t carry = 1;
+    uint8_t overflow = 0;
+    uint8_t x, y = 0; // Index registers
 
     uint8_t instrLen(uint8_t instr)
     {
@@ -64,6 +66,30 @@ class internalController
         interface->addressBus = a;
         interface->dataBus = d;
         interface->reading = false;
+    }
+
+    void adc(uint8_t a, uint8_t b)
+    {
+        add = a + b + carry;
+        if ((a & 0x80) == (b & 0x80))
+        {
+            if ((add & 0x80) != (a & 0x80))
+            {
+                overflow = 1;
+            }
+        }
+        else
+        {
+            overflow = 0;
+        }
+        if (add < a)
+        {
+            carry = 1;
+        }
+        else
+        {
+            carry = 0;
+        }
     }
 
     void execute()
@@ -150,6 +176,25 @@ class internalController
                 }
             }
         }
+        else if (instr == 0x75)
+        {
+            // ADC
+            // Zero Page, X
+            // TODO: untested
+            if (timing == 1)
+            {
+                fetchData(data); // Discarded
+                adc(data, x);
+            }
+            else if (timing == 2)
+            {
+                fetchData(add);
+            }
+            else if (timing == 3)
+            {
+                adc(accum, data);
+            }
+        }
     }
 
     public:
@@ -157,7 +202,7 @@ class internalController
     void cycle()
     {
         if (interface->sync) printf("------\n");
-        printf("%i, %i, %i\n", pc, interface->addressBus, interface->dataBus);
+        printf("%i, %i, %2x\n", pc, interface->addressBus, interface->dataBus);
         timing++;
         if (interface->sync && timing != 0)
         {
