@@ -36,9 +36,10 @@ class internalController
 
     uint8_t accum = 0;
     uint8_t add = 0; // Adder hold register
-    uint8_t carry = 1;
+    uint8_t carry = 0;
     uint8_t overflow = 0;
-    uint8_t x, y = 0; // Index registers
+    uint8_t x = 5; // Index registers
+    uint8_t y = 0;
 
     uint8_t instrLen(uint8_t instr)
     {
@@ -193,6 +194,46 @@ class internalController
             else if (timing == 3)
             {
                 adc(accum, data);
+                fetchOpcode();
+            }
+        }
+        else if (instr == 0xFE)
+        {
+            // INC
+            // Absolute, X
+            if (timing == 1)
+            {
+                fetchData(pc);
+                pc++;
+                adc(data, x);
+                printf("add: %i + %i = %i\n", data, x, add);
+            }
+            else if (timing == 2)
+            {
+                uint16_t address = add | (data << 8);
+                fetchData(address);
+                pc++;
+                adc(data, 0); // Add carry to ADL
+            }
+            else if (timing == 3)
+            {
+                // Replace `ADH` with `ADH + C` in addressBus
+                uint16_t address = (add << 8) | (interface->addressBus & 0x00FF);
+                fetchData(address);
+            }
+            else if (timing == 4)
+            {
+                adc(data, 1);
+                fetchData(interface->addressBus); // Discarded
+            }
+            else if (timing == 5)
+            {
+                store(interface->addressBus, add);
+            }
+            else if (timing == 6)
+            {
+                fetchOpcode();
+                pc++;
             }
         }
     }
@@ -237,15 +278,10 @@ class externalController
     externalController(cpu6502Interface* _interface): interface(_interface) 
     {
         memory[0] = 0xEA;
-        memory[1] = 0x90;
-        memory[2] = 4;
-        memory[3] = 0x4C;
-        memory[4] = 0x23;
-        memory[5] = 0x01;
-        memory[6] = 0xA9;
-        memory[7] = 10;
-        memory[int(0x123)] = 0xA9;
-        memory[int(0x124)] = 20;
+        memory[1] = 0xFE;
+        memory[2] = 0xFF;
+        memory[3] = 0;
+        memory[0x100] = 10;
         
     }
 
