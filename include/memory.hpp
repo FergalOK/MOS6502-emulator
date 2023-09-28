@@ -3,8 +3,11 @@
 
 #include <cstdint>
 
-uint8_t RAM[];
-uint8_t ROM[];
+#define MEM_SIZE 1 << 16
+
+// Programmer sets ROM, RAM, IO ranges
+uint8_t MEM[MEM_SIZE];
+
 
 class AddressBus
 {
