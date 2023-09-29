@@ -13,6 +13,8 @@ public:
 class Clock
 {
 private:
+    // The clock provides the cycle we are at in the pipelining
+    uint8_t _cycle = 0;
     std::vector<ClockSubscriber*> _subscribers;
 
 public:
