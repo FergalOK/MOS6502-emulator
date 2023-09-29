@@ -13,9 +13,10 @@ public:
 class Clock
 {
 private:
-    std::vector<ClockSubscriber> _subscribers;
+    std::vector<ClockSubscriber*> _subscribers;
 
 public:
+    void subscribe(ClockSubscriber* subscriber);
     void run();
 };
 
