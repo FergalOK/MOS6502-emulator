@@ -17,14 +17,7 @@ public:
     void write(uint8_t data);
 };
 
-class AddressBus: public Bus
-{
-
-};
-
-class DataBus: public Bus
-{
-
-};
+Bus addressBus;
+Bus dataBus; 
 
 #endif
