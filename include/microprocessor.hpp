@@ -1,9 +1,13 @@
 #ifndef MICROPROCESSOR_HPP
 #define MICROPROCESSOR_HPP
 
-class Microprocessor
-{
+#include "memory.hpp"
+#include "clock.hpp"
 
+class Microprocessor: public ClockSubscriber
+{
+public:
+    void tick(uint8_t cycle) override;
 };
 
 #endif

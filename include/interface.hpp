@@ -1,9 +1,12 @@
 #ifndef INTERFACE_HPP
 #define INTERFACE_HPP
 
-class PeripheralInterface
-{
+#include "clock.hpp"
 
+class PeripheralInterface: public ClockSubscriber
+{
+public:
+    void tick(uint8_t cycle) override;
 };
 
 #endif

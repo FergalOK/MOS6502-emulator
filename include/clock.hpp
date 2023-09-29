@@ -2,11 +2,12 @@
 #define CLOCK_HPP
 
 #include <vector>
+#include <cstdint>
 
 class ClockSubscriber
 {
 public:
-    virtual void tick() = 0;
+    virtual void tick(uint8_t cycle) = 0;
 };
 
 class Clock
