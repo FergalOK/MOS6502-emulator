@@ -5,4 +5,14 @@
 
 uint16_t pc;
 
+// true -> Fetch opcode
+// false -> Fetch data
+bool sync;
+
+// Accumulator
+uint8_t A;
+
+// Carry
+uint8_t C = 0;
+
 #endif

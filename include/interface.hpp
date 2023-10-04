@@ -7,6 +7,7 @@ class PeripheralInterface: public ClockSubscriber
 {
 public:
     void tick(uint8_t cycle) override;
+    void tock(uint8_t cycle) override;
 };
 
 #endif

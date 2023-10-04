@@ -9,6 +9,7 @@ private:
     void parse(uint8_t opcode);
 public:
     void tick(uint8_t cycle) override;
+    void tock(uint8_t cycle) override;
 };
 
 #endif

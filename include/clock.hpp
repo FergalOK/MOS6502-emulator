@@ -8,6 +8,7 @@ class ClockSubscriber
 {
 public:
     virtual void tick(uint8_t cycle) = 0;
+    virtual void tock(uint8_t cycle) = 0;
 };
 
 class Clock
